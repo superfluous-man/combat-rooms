@@ -163,8 +163,12 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                 ⚔️
               </div>
               <div className="min-w-0">
-                <div className="text-xs text-zinc-500">Анонимный ФБ чат</div>
-                <div className="font-semibold truncate">{room?.name ?? "Загрузка…"}</div>
+                <a className="text-xs text-zinc-500" href="/">Анонимный ФБ чат</a>
+                <div className="font-semibold truncate text-zinc-900">
+                  <span className="inline-flex items-center gap-2 rounded-xl bg-indigo-50 px-2.5 py-1 text-indigo-700 ring-1 ring-indigo-200">
+                    {room?.name ?? "Загрузка…"}
+                  </span>
+                </div>
               </div>
             </div>
           </header>
@@ -226,6 +230,52 @@ export default function RoomClient({ roomId }: { roomId: string }) {
           </main>
 
           <footer className="sticky bottom-0 border-t bg-white/90 backdrop-blur px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+            <details className="mb-3 rounded-2xl border border-zinc-200 bg-white shadow-sm">
+              <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between">
+                <span className="text-sm font-medium text-zinc-900">Полезные ссылки ЗФБ-26</span>
+                <span className="text-zinc-500">⌄</span>
+              </summary>
+
+              <div className="px-4 pb-4 pt-1 text-sm">
+                <div className="flex flex-col gap-2">
+                  <a
+                    href="PUT_RULES_LINK_HERE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 hover:bg-zinc-100"
+                  >
+                    📌 Правила
+                  </a>
+
+                  <a
+                    href="https://images2.imgbox.com/e1/dd/r0roXB0T_o.png"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 hover:bg-zinc-100"
+                  >
+                    🗓️ Расписание
+                  </a>
+
+                  <a
+                    href="https://fkomb.cyou/wtf2026/catalog.php"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 hover:bg-zinc-100"
+                  >
+                    🧾 Каталог работ по командам
+                  </a>
+
+                  <a
+                    href="https://discord.com/invite/yW8YFCd"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 hover:bg-zinc-100"
+                  >
+                    💬 Дискорд
+                  </a>
+                </div>
+              </div>
+            </details>
             {replyPreview && (
               <div className="mb-2 rounded-2xl bg-zinc-50 border border-zinc-200 p-2 text-sm flex items-start gap-2">
                 <div className="flex-1 min-w-0">
