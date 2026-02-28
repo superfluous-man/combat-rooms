@@ -452,7 +452,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                 onClick={sendMessage}
                 disabled={sendDisabled}
               >
-                Отправить
+                {">"}
               </button>
             </div>
 
