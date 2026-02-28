@@ -25,11 +25,23 @@ type ReactionRow = {
 const REACTIONS = ["🔥", "😭", "👀", "💀", "🧠", "❤️"];
 
 export default function RoomClient({ roomId }: { roomId: string }) {
+  const MAX_LEN = 1000;
+
+  const [uiError, setUiError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+
+  function showError(msg: string) {
+    setUiError(msg);
+    window.clearTimeout((showError as any)._t);
+    (showError as any)._t = window.setTimeout(() => setUiError(null), 3500);
+  }
+
   const [identity, setIdentity] = useState<Identity | null>(null);
 
   useEffect(() => {
     setIdentity(createIdentity());
   }, []);
+
   const [room, setRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -105,6 +117,17 @@ export default function RoomClient({ roomId }: { roomId: string }) {
   }, [roomId]);
 
   useEffect(() => {
+    const update = () => setIsOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
@@ -112,13 +135,28 @@ export default function RoomClient({ roomId }: { roomId: string }) {
 
   async function sendMessage() {
     const trimmed = input.trim();
+    if (!identity) {
+      showError("Инициализация… попробуйте ещё раз.");
+      return;
+    }
+
+    if (!isOnline) {
+      showError("Нет подключения к интернету.");
+      return;
+    }
     if (!trimmed) return;
 
-    if (!identity) return;
+    if (trimmed.length > MAX_LEN) {
+      showError(`Слишком длинно: максимум ${MAX_LEN} символов.`);
+      return;
+    }
 
     // simple client rate limit: 1 message / 2 seconds
     const now = Date.now();
-    if (now - lastSentAtRef.current < 2000) return;
+    if (now - lastSentAtRef.current < 2000) {
+      showError("Слишком быстро. Подождите пару секунд.");
+      return;
+    }
     lastSentAtRef.current = now;
 
     if (trimmed.length > 500) return;
@@ -136,6 +174,10 @@ export default function RoomClient({ roomId }: { roomId: string }) {
 
     if (error) {
       console.error("INSERT messages failed:", error);
+      showError("Не удалось отправить сообщение.");
+      // Put the text back so user doesn’t lose it
+      setInput(trimmed);
+      return;
     }
     setReplyTo(null);
   }
@@ -143,6 +185,10 @@ export default function RoomClient({ roomId }: { roomId: string }) {
   async function react(messageId: string, emoji: string) {
     if (!identity) return;
 
+    if (!isOnline) {
+      showError("Нет подключения к интернету.");
+      return;
+    }
     // unique constraint prevents spam by same session for same emoji
     const { error } = await supabase.from("reactions").insert({
       message_id: messageId,
@@ -150,9 +196,16 @@ export default function RoomClient({ roomId }: { roomId: string }) {
       session_id: identity.sessionId,
     });
 
-    if (error) console.error("INSERT reactions failed:", error);
-  }
+    if (error) {
+      // ignore duplicate reaction silently (unique constraint)
+      const msg = String((error as any).message ?? "");
+      if (msg.toLowerCase().includes("duplicate") || msg.toLowerCase().includes("unique")) return;
 
+      console.error("INSERT reactions failed:", error);
+      showError("Не удалось поставить реакцию.");
+    }
+  }
+  const sendDisabled = !identity || !isOnline || input.trim().length === 0 || input.length > MAX_LEN;
   return (
     <div className="min-h-dvh flex flex-col bg-zinc-50 antialiased">
       <div className="mx-auto w-full max-w-2xl flex flex-col min-h-dvh">
@@ -242,7 +295,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                     href="PUT_RULES_LINK_HERE"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 hover:bg-zinc-100"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 hover:bg-indigo-100"
                   >
                     📌 Правила
                   </a>
@@ -251,7 +304,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                     href="https://images2.imgbox.com/e1/dd/r0roXB0T_o.png"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 hover:bg-zinc-100"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 hover:bg-indigo-100"
                   >
                     🗓️ Расписание
                   </a>
@@ -260,7 +313,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                     href="https://fkomb.cyou/wtf2026/catalog.php"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 hover:bg-zinc-100"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 hover:bg-indigo-100"
                   >
                     🧾 Каталог работ по командам
                   </a>
@@ -269,7 +322,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                     href="https://discord.com/invite/yW8YFCd"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 hover:bg-zinc-100"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 hover:bg-indigo-100"
                   >
                     💬 Дискорд
                   </a>
@@ -285,7 +338,17 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                 <button className="text-xs text-zinc-500 px-2" onClick={() => setReplyTo(null)}>✕</button>
               </div>
             )}
+            {uiError && (
+              <div className="mb-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {uiError}
+              </div>
+            )}
 
+            {!isOnline && (
+              <div className="mb-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Вы офлайн. Сообщения не отправляются.
+              </div>
+            )}
             <div className="flex gap-2 items-end">
               <input
                 className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200"
@@ -299,11 +362,23 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                   }
                 }}
               />
-              <button className="rounded-2xl bg-zinc-900 text-white px-4 py-3 font-medium active:scale-[0.99]" onClick={sendMessage}>
+              <button
+                className={`rounded-2xl px-4 py-3 font-medium active:scale-[0.99] ${sendDisabled
+                  ? "bg-zinc-300 text-white cursor-not-allowed"
+                  : "bg-zinc-900 text-white"
+                  }`}
+                onClick={sendMessage}
+                disabled={sendDisabled}
+              >
                 Отправить
               </button>
             </div>
-
+            <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
+              <span>{input.trim().length > 0 ? "Enter — отправить" : " "}</span>
+              <span className={input.length > MAX_LEN ? "text-red-600" : ""}>
+                {input.length}/{MAX_LEN}
+              </span>
+            </div>
             <div className="mt-2 text-xs text-zinc-500">
               {identity ? (
                 <>Вы — <span className="font-medium text-zinc-700">{identity.nickname}</span>{" "}
