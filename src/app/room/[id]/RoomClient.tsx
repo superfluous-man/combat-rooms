@@ -24,11 +24,11 @@ type ReactionRow = {
 const REACTIONS = ["🔥", "😭", "👀", "💀", "🧠", "❤️"];
 
 export default function RoomClient({ roomId }: { roomId: string }) {
-const [identity, setIdentity] = useState<Identity | null>(null);
+  const [identity, setIdentity] = useState<Identity | null>(null);
 
-useEffect(() => {
-  setIdentity(createIdentity());
-}, []);
+  useEffect(() => {
+    setIdentity(createIdentity());
+  }, []);
   const [room, setRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -124,7 +124,7 @@ useEffect(() => {
 
     setInput("");
 
-    await supabase.from("messages").insert({
+    const { data, error } = await supabase.from("messages").insert({
       room_id: roomId,
       session_id: identity.sessionId,
       nickname: identity.nickname,
@@ -133,6 +133,9 @@ useEffect(() => {
       reply_to_message_id: replyTo?.id ?? null,
     });
 
+    if (error) {
+      console.error("INSERT messages failed:", error);
+    }
     setReplyTo(null);
   }
 
@@ -140,11 +143,13 @@ useEffect(() => {
     if (!identity) return;
 
     // unique constraint prevents spam by same session for same emoji
-    await supabase.from("reactions").insert({
+    const { error } = await supabase.from("reactions").insert({
       message_id: messageId,
       emoji,
       session_id: identity.sessionId,
     });
+
+    if (error) console.error("INSERT reactions failed:", error);
   }
 
   return (
@@ -230,15 +235,15 @@ useEffect(() => {
         </div>
 
         <div className="mt-2 text-xs opacity-60">
-  {identity ? (
-    <>
-      Вы — <span className="font-medium">{identity.nickname}</span>{" "}
-      (обновите страницу — будет новое)
-    </>
-  ) : (
-    "Загрузка…"
-  )}
-</div>
+          {identity ? (
+            <>
+              Вы — <span className="font-medium">{identity.nickname}</span>{" "}
+              (обновите страницу — будет новое)
+            </>
+          ) : (
+            "Загрузка…"
+          )}
+        </div>
       </footer>
     </div>
   );
