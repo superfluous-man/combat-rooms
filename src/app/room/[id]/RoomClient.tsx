@@ -153,98 +153,121 @@ export default function RoomClient({ roomId }: { roomId: string }) {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col">
-      <header className="sticky top-0 z-10 border-b bg-white/90 backdrop-blur px-4 py-3">
-        <div className="text-sm opacity-70">Анон комната ФБ</div>
-        <div className="font-semibold">{room?.name ?? "Загрузка..."}</div>
-      </header>
-
-      <main className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {messages.map((m) => {
-          const reply = m.reply_to_message_id ? messages.find(x => x.id === m.reply_to_message_id) : null;
-          const counts = reactionCounts[m.id] ?? {};
-
-          return (
-            <div key={m.id} className="rounded-xl border p-3">
-              <div className="flex items-center gap-2">
-                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: m.color }} />
-                <span className="font-medium">{m.nickname}</span>
-                <span className="ml-auto text-xs opacity-60">{new Date(m.created_at).toLocaleTimeString()}</span>
+    <div className="min-h-dvh flex flex-col bg-zinc-50 antialiased">
+      <div className="mx-auto w-full max-w-2xl flex flex-col min-h-dvh">
+        <div className="min-h-dvh flex flex-col">
+          <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-2xl bg-zinc-900 text-white flex items-center justify-center text-sm">
+                ⚔️
               </div>
+              <div className="min-w-0">
+                <div className="text-xs text-zinc-500">Анонимный ФБ чат</div>
+                <div className="font-semibold truncate">{room?.name ?? "Загрузка…"}</div>
+              </div>
+            </div>
+          </header>
 
-              {reply && (
-                <div className="mt-2 rounded-lg bg-black/5 p-2 text-sm">
-                  <div className="text-xs opacity-60">Ответ на {reply.nickname}</div>
-                  <div className="line-clamp-2">{reply.content}</div>
+          <main className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            {messages.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-4 text-sm text-zinc-600">
+                Пока тихо. Напишите первой.
+              </div>
+            )}
+            {messages.map((m) => {
+              const reply = m.reply_to_message_id ? messages.find(x => x.id === m.reply_to_message_id) : null;
+              const counts = reactionCounts[m.id] ?? {};
+
+              return (
+                <div key={m.id} className="rounded-2xl bg-white border border-zinc-200 p-3 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: m.color }} />
+                    <span className="font-medium text-zinc-900">{m.nickname}</span>
+                    <span className="ml-auto text-xs text-zinc-400" suppressHydrationWarning>
+                      {new Date(m.created_at).toLocaleTimeString()}
+                    </span>
+                  </div>
+
+                  {reply && (
+                    <div className="mt-2 rounded-xl bg-zinc-50 border border-zinc-200 p-2 text-sm">
+                      <div className="text-xs text-zinc-500">Ответ на {reply.nickname}</div>
+                      <div className="line-clamp-2 text-zinc-700">{reply.content}</div>
+                    </div>
+                  )}
+
+                  <div className="mt-2 whitespace-pre-wrap text-zinc-900 leading-relaxed">
+                    {m.content}
+                  </div>
+
+                  Replace the controls row with:
+
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    <button
+                      className="text-xs rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-zinc-700 active:scale-[0.99]"
+                      onClick={() => setReplyTo(m)}
+                    >
+                      Ответить
+                    </button>
+
+                    {REACTIONS.map((e) => (
+                      <button
+                        key={e}
+                        className="text-xs rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-zinc-700 active:scale-[0.99]"
+                        onClick={() => react(m.id, e)}
+                      >
+                        {e}
+                        {counts[e] ? <span className="ml-1 text-zinc-500">{counts[e]}</span> : null}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
+              );
+            })}
+            <div ref={bottomRef} />
+          </main>
 
-              <div className="mt-2 whitespace-pre-wrap">{m.content}</div>
-
-              <div className="mt-3 flex items-center gap-2 flex-wrap">
-                <button
-                  className="text-xs rounded-lg border px-2 py-1 opacity-80"
-                  onClick={() => setReplyTo(m)}
-                >
-                  Ответить
-                </button>
-
-                {REACTIONS.map((e) => (
-                  <button
-                    key={e}
-                    className="text-xs rounded-lg border px-2 py-1"
-                    onClick={() => react(m.id, e)}
-                  >
-                    {e} {counts[e] ? <span className="opacity-70">{counts[e]}</span> : null}
-                  </button>
-                ))}
+          <footer className="sticky bottom-0 border-t bg-white/90 backdrop-blur px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+            {replyPreview && (
+              <div className="mb-2 rounded-2xl bg-zinc-50 border border-zinc-200 p-2 text-sm flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-zinc-500">Ответ на {replyPreview.nickname}</div>
+                  <div className="line-clamp-2 text-zinc-700">{replyPreview.content}</div>
+                </div>
+                <button className="text-xs text-zinc-500 px-2" onClick={() => setReplyTo(null)}>✕</button>
               </div>
+            )}
+
+            <div className="flex gap-2 items-end">
+              <input
+                className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200"
+                placeholder="Напишите сообщение..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+              />
+              <button className="rounded-2xl bg-zinc-900 text-white px-4 py-3 font-medium active:scale-[0.99]" onClick={sendMessage}>
+                Отправить
+              </button>
             </div>
-          );
-        })}
-        <div ref={bottomRef} />
-      </main>
 
-      <footer className="sticky bottom-0 border-t bg-white px-4 py-3">
-        {replyPreview && (
-          <div className="mb-2 rounded-xl bg-black/5 p-2 text-sm flex items-start gap-2">
-            <div className="flex-1">
-              <div className="text-xs opacity-60">Ответ на {replyPreview.nickname}</div>
-              <div className="line-clamp-2">{replyPreview.content}</div>
+            <div className="mt-2 text-xs text-zinc-500">
+              {identity ? (
+                <>Вы — <span className="font-medium text-zinc-700">{identity.nickname}</span>{" "}
+                  (обновите страницу — будет новое имя)
+                </>
+              ) : (
+                "Загрузка…"
+              )}
             </div>
-            <button className="text-xs opacity-70" onClick={() => setReplyTo(null)}>✕</button>
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <input
-            className="flex-1 rounded-xl border px-3 py-2"
-            placeholder="Напишите сообщение..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
-          />
-          <button className="rounded-xl border px-4 py-2" onClick={sendMessage}>
-            Отправить
-          </button>
+          </footer>
         </div>
-
-        <div className="mt-2 text-xs opacity-60">
-          {identity ? (
-            <>
-              Вы — <span className="font-medium">{identity.nickname}</span>{" "}
-              (обновите страницу — будет новое)
-            </>
-          ) : (
-            "Загрузка…"
-          )}
-        </div>
-      </footer>
+      </div>
     </div>
+
   );
 }
