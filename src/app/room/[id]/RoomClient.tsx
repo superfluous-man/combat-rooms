@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { createIdentity, type Identity } from "@/lib/identity";
+import { linkifyText } from "@/lib/linkify";
 
 type Room = { id: string; name: string };
 type Message = {
@@ -196,7 +197,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                   )}
 
                   <div className="mt-2 whitespace-pre-wrap text-zinc-900 leading-relaxed">
-                    {m.content}
+                    {linkifyText(m.content)}
                   </div>
 
                   <div className="mt-3 flex items-center gap-2 flex-wrap">

@@ -15,12 +15,12 @@ export default async function HomePage() {
     <div className="min-h-dvh bg-zinc-50">
       <div className="mx-auto w-full max-w-2xl px-4 py-6">
         <header className="mb-5">
-          <div className="text-xs text-zinc-500">Прототип</div>
+          <div className="text-xs text-zinc-500">v.1-alpha</div>
           <h1 className="text-xl font-semibold text-zinc-900">
-            Анонимные комнаты Битвы
+            Анонимные чат-комнаты ФБ и ЗФБ
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
-            Выберите уровень и пишите без регистрации.
+            Выберите уровень и пишите без регистрации и смс 😏
           </p>
         </header>
 
