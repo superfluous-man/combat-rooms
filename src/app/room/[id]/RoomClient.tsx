@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { createIdentity, type Identity } from "@/lib/identity";
 import { linkifyText } from "@/lib/linkify";
@@ -52,12 +52,12 @@ export default function RoomClient({ roomId }: { roomId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [reactionCounts, setReactionCounts] = useState<Record<string, Record<string, number>>>({});
   const lastSentAtRef = useRef<number>(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     const load = async () => {
       const { data: roomData } = await supabase
@@ -151,6 +151,18 @@ export default function RoomClient({ roomId }: { roomId: string }) {
     document.addEventListener("click", onDocClick);
     return () => document.removeEventListener("click", onDocClick);
   }, [emojiOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDocClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-menu-area='true']")) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [menuOpen]);
 
   const replyPreview = replyTo ? messages.find(m => m.id === replyTo.id) : null;
 
@@ -265,7 +277,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                 className="h-9 w-9 rounded-2xl bg-zinc-900 text-white flex items-center justify-center text-sm 
              hover:ring-2 hover:ring-zinc-300 hover:opacity-95 
              active:scale-[0.97] transition"
-             aria-label="На главную"
+                aria-label="На главную"
               >
                 ⚔️
               </Link>
@@ -278,6 +290,56 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                 </div>
               </div>
             </div>
+            <button
+              type="button"
+              className="ml-auto p-2 rounded-md hover:bg-zinc-100"
+              onClick={() => setMenuOpen(v => !v)}
+              aria-label="Меню"
+              data-menu-area="true"
+            >
+              ☰
+            </button>
+            {menuOpen && (
+              <div
+                className="absolute top-[calc(100%+4px)] right-4 w-[min(280px,90vw)] rounded-xl border bg-white shadow-lg p-4 z-20"
+                data-menu-area="true"
+              >
+                <div className="flex flex-col gap-2 text-sm">
+                  <a
+                    href="https://docs.google.com/document/d/1Sigmrgw0-TMqlf728RaLakdogPCOGxLIrqXZDqmm-Zg/edit?tab=t.0#heading=h.sxg5jx7hnh1i"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
+                  >
+                    📌 Правила
+                  </a>
+                  <a
+                    href="https://images2.imgbox.com/e1/dd/r0roXB0T_o.png"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
+                  >
+                    🗓️ Расписание
+                  </a>
+                  <a
+                    href="https://fkomb.cyou/wtf2026/catalog.php"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
+                  >
+                    🧾 Каталог работ по командам
+                  </a>
+                  <a
+                    href="https://discord.com/invite/yW8YFCd"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
+                  >
+                    💬 Дискорд
+                  </a>
+                </div>
+              </div>
+            )}
           </header>
 
           <main className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -336,141 +398,97 @@ export default function RoomClient({ roomId }: { roomId: string }) {
             <div ref={bottomRef} />
           </main>
 
-          <footer className="sticky bottom-0 border-t bg-white/90 backdrop-blur px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
-            <details className="mb-3 rounded-2xl border border-zinc-200 bg-white shadow-sm">
-              <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-zinc-900">Полезные ссылки ЗФБ-26</span>
-                <span className="text-zinc-500">⌄</span>
-              </summary>
-
-              <div className="px-4 pb-4 pt-1 text-sm">
-                <div className="flex flex-col gap-2">
-                  <a
-                    href="PUT_RULES_LINK_HERE"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
-                  >
-                    📌 Правила
-                  </a>
-
-                  <a
-                    href="https://images2.imgbox.com/e1/dd/r0roXB0T_o.png"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
-                  >
-                    🗓️ Расписание
-                  </a>
-
-                  <a
-                    href="https://fkomb.cyou/wtf2026/catalog.php"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
-                  >
-                    🧾 Каталог работ по командам
-                  </a>
-
-                  <a
-                    href="https://discord.com/invite/yW8YFCd"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
-                  >
-                    💬 Дискорд
-                  </a>
-                </div>
-              </div>
-            </details>
-            {replyPreview && (
-              <div className="mb-2 rounded-2xl bg-zinc-50 border border-zinc-200 p-2 text-sm flex items-start gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-zinc-500">Ответ на {replyPreview.nickname}</div>
-                  <div className="line-clamp-2 text-zinc-700">{replyPreview.content}</div>
-                </div>
-                <button className="text-xs text-zinc-500 px-2" onClick={() => setReplyTo(null)}>✕</button>
-              </div>
-            )}
-            {uiError && (
-              <div className="mb-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {uiError}
-              </div>
-            )}
-
-            {!isOnline && (
-              <div className="mb-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                Вы офлайн. Сообщения не отправляются.
-              </div>
-            )}
-            <div className="relative flex gap-2 items-end">
-              <div className="relative" data-emoji-area="true">
-                <button
-                  type="button"
-                  className="rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-zinc-700 active:scale-[0.99]"
-                  onClick={() => setEmojiOpen((v) => !v)}
-                  aria-label="Эмодзи"
-                >
-                  🙂
-                </button>
-
-                {emojiOpen && (
-                  <div className="absolute bottom-[56px] left-0 z-20 w-[min(360px,90vw)] rounded-2xl border border-zinc-200 bg-white shadow-lg p-3">
-                    <div className="grid grid-cols-8 gap-1">
-                      {EMOJIS.map((e) => (
-                        <button
-                          key={e}
-                          type="button"
-                          className="rounded-xl hover:bg-zinc-100 active:bg-zinc-200 p-2 text-lg leading-none"
-                          onClick={() => insertEmoji(e)}
-                          aria-label={e}
-                        >
-                          {e}
-                        </button>
-                      ))}
-                    </div>
+          <footer className="sticky bottom-0 border-t bg-white/90 backdrop-blur px-4 py-3pb-[calc(env(safe-area-inset-bottom)+12px)]">
+            <div className="mx-auto w-full max-w-2xl">
+              {replyPreview && (
+                <div className="mb-2 rounded-2xl bg-zinc-50 border border-zinc-200 p-2 text-sm flex items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-zinc-500">Ответ на {replyPreview.nickname}</div>
+                    <div className="line-clamp-2 text-zinc-700">{replyPreview.content}</div>
                   </div>
+                  <button className="text-xs text-zinc-500 px-2" onClick={() => setReplyTo(null)}>✕</button>
+                </div>
+              )}
+              {uiError && (
+                <div className="mb-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {uiError}
+                </div>
+              )}
+
+              {!isOnline && (
+                <div className="mb-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  Вы офлайн. Сообщения не отправляются.
+                </div>
+              )}
+              <div className="relative flex gap-2 items-end">
+                <div className="relative" data-emoji-area="true">
+                  <button
+                    type="button"
+                    className="rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-zinc-700 active:scale-[0.99]"
+                    onClick={() => setEmojiOpen((v) => !v)}
+                    aria-label="Эмодзи"
+                  >
+                    🙂
+                  </button>
+
+                  {emojiOpen && (
+                    <div className="absolute bottom-[56px] left-0 z-20 w-[min(360px,90vw)] rounded-2xl border border-zinc-200 bg-white shadow-lg p-3">
+                      <div className="grid grid-cols-8 gap-1">
+                        {EMOJIS.map((e) => (
+                          <button
+                            key={e}
+                            type="button"
+                            className="rounded-xl hover:bg-zinc-100 active:bg-zinc-200 p-2 text-lg leading-none"
+                            onClick={() => insertEmoji(e)}
+                            aria-label={e}
+                          >
+                            {e}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <textarea
+                  ref={inputRef}
+                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200"
+                  placeholder="Напишите сообщение…"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                />
+
+                <button
+                  className={`rounded-2xl px-4 py-3 font-medium active:scale-[0.99] ${sendDisabled ? "bg-zinc-300 text-white cursor-not-allowed" : "bg-zinc-900 text-white"
+                    }`}
+                  onClick={sendMessage}
+                  disabled={sendDisabled}
+                >
+                  {">"}
+                </button>
+              </div>
+
+              <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
+                <span>{input.trim().length > 0 ? "Enter — отправить" : " "}</span>
+                <span className={input.length > MAX_LEN ? "text-red-600" : ""}>
+                  {input.length}/{MAX_LEN}
+                </span>
+              </div>
+
+              <div className="mt-2 text-xs text-zinc-500">
+                {identity ? (
+                  <>Вы — <span className="font-medium text-zinc-700">{identity.nickname}</span>{" "}
+                    (обновите страницу — будет новое имя)
+                  </>
+                ) : (
+                  "Загрузка…"
                 )}
               </div>
-              <input
-                ref={inputRef}
-                className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200"
-                placeholder="Напишите сообщение…"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-              />
-
-              <button
-                className={`rounded-2xl px-4 py-3 font-medium active:scale-[0.99] ${sendDisabled ? "bg-zinc-300 text-white cursor-not-allowed" : "bg-zinc-900 text-white"
-                  }`}
-                onClick={sendMessage}
-                disabled={sendDisabled}
-              >
-                {">"}
-              </button>
-            </div>
-
-            <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
-              <span>{input.trim().length > 0 ? "Enter — отправить" : " "}</span>
-              <span className={input.length > MAX_LEN ? "text-red-600" : ""}>
-                {input.length}/{MAX_LEN}
-              </span>
-            </div>
-
-            <div className="mt-2 text-xs text-zinc-500">
-              {identity ? (
-                <>Вы — <span className="font-medium text-zinc-700">{identity.nickname}</span>{" "}
-                  (обновите страницу — будет новое имя)
-                </>
-              ) : (
-                "Загрузка…"
-              )}
             </div>
           </footer>
         </div>
