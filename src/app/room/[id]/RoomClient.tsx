@@ -199,8 +199,6 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                     {m.content}
                   </div>
 
-                  Replace the controls row with:
-
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
                     <button
                       className="text-xs rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-zinc-700 active:scale-[0.99]"
