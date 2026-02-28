@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { createIdentity, type Identity } from "@/lib/identity";
 import { linkifyText } from "@/lib/linkify";
+import Link from "next/link";
 
 type Room = { id: string; name: string };
 type Message = {
@@ -22,7 +23,12 @@ type ReactionRow = {
   emoji: string;
 };
 
-const REACTIONS = ["🔥", "😭", "👀", "💀", "🧠", "❤️"];
+const REACTIONS = ["🔥", "😭", "👀", "💀", "❤️"];
+const EMOJIS = [
+  "😂", "😭", "🥺", "😳", "😌", "😎", "🤡", "💀", "👀", "🔥", "❤️", "✨", "💅", "🫶",
+  "😡", "🤝", "🙃", "🫠", "😴", "🤨", "😈", "🧠", "🧵", "🫠", "🫡", "💥", "🌚", "🌝",
+  "🎭", "📌", "🗓️", "🏳️‍🌈", "⚡", "🕯️", "📣", "🫣", "🫀"
+];
 
 export default function RoomClient({ roomId }: { roomId: string }) {
   const MAX_LEN = 1000;
@@ -49,6 +55,8 @@ export default function RoomClient({ roomId }: { roomId: string }) {
   const [reactionCounts, setReactionCounts] = useState<Record<string, Record<string, number>>>({});
   const lastSentAtRef = useRef<number>(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -131,6 +139,19 @@ export default function RoomClient({ roomId }: { roomId: string }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!emojiOpen) return;
+      const target = e.target as HTMLElement;
+      // Close if click is outside the popup and the emoji button area
+      if (!target.closest("[data-emoji-area='true']")) {
+        setEmojiOpen(false);
+      }
+    }
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [emojiOpen]);
+
   const replyPreview = replyTo ? messages.find(m => m.id === replyTo.id) : null;
 
   async function sendMessage() {
@@ -205,18 +226,51 @@ export default function RoomClient({ roomId }: { roomId: string }) {
       showError("Не удалось поставить реакцию.");
     }
   }
+
+  function insertEmoji(e: string) {
+    // Close picker after selection (nice on mobile)
+    setEmojiOpen(false);
+
+    // If input isn't focused, just append
+    if (!inputRef.current) {
+      setInput((prev) => prev + e);
+      return;
+    }
+
+    const el = inputRef.current;
+    const start = el.selectionStart ?? input.length;
+    const end = el.selectionEnd ?? input.length;
+
+    const next = input.slice(0, start) + e + input.slice(end);
+    setInput(next);
+
+    // Restore cursor after emoji
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + e.length;
+      el.setSelectionRange(pos, pos);
+    });
+  }
+
   const sendDisabled = !identity || !isOnline || input.trim().length === 0 || input.length > MAX_LEN;
+
   return (
     <div className="min-h-dvh flex flex-col bg-zinc-50 antialiased">
       <div className="mx-auto w-full max-w-2xl flex flex-col min-h-dvh">
         <div className="min-h-dvh flex flex-col">
           <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-2xl bg-zinc-900 text-white flex items-center justify-center text-sm">
+              <Link
+                href="/"
+                className="h-9 w-9 rounded-2xl bg-zinc-900 text-white flex items-center justify-center text-sm 
+             hover:ring-2 hover:ring-zinc-300 hover:opacity-95 
+             active:scale-[0.97] transition"
+             aria-label="На главную"
+              >
                 ⚔️
-              </div>
+              </Link>
               <div className="min-w-0">
-                <a className="text-xs text-zinc-500" href="/">Анонимный ФБ чат</a>
+                <Link className="text-xs text-zinc-500 transition hover:text-zinc-700" href="/">Анонимный ФБ чат</Link>
                 <div className="font-semibold truncate text-zinc-900">
                   <span className="inline-flex items-center gap-2 rounded-xl bg-indigo-50 px-2.5 py-1 text-indigo-700 ring-1 ring-indigo-200">
                     {room?.name ?? "Загрузка…"}
@@ -295,7 +349,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                     href="PUT_RULES_LINK_HERE"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 hover:bg-indigo-100"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
                   >
                     📌 Правила
                   </a>
@@ -304,7 +358,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                     href="https://images2.imgbox.com/e1/dd/r0roXB0T_o.png"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 hover:bg-indigo-100"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
                   >
                     🗓️ Расписание
                   </a>
@@ -313,7 +367,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                     href="https://fkomb.cyou/wtf2026/catalog.php"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 hover:bg-indigo-100"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
                   >
                     🧾 Каталог работ по командам
                   </a>
@@ -322,7 +376,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                     href="https://discord.com/invite/yW8YFCd"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 hover:bg-indigo-100"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 hover:bg-indigo-100"
                   >
                     💬 Дискорд
                   </a>
@@ -349,10 +403,39 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                 Вы офлайн. Сообщения не отправляются.
               </div>
             )}
-            <div className="flex gap-2 items-end">
+            <div className="relative flex gap-2 items-end">
+              <div className="relative" data-emoji-area="true">
+                <button
+                  type="button"
+                  className="rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-zinc-700 active:scale-[0.99]"
+                  onClick={() => setEmojiOpen((v) => !v)}
+                  aria-label="Эмодзи"
+                >
+                  🙂
+                </button>
+
+                {emojiOpen && (
+                  <div className="absolute bottom-[56px] left-0 z-20 w-[min(360px,90vw)] rounded-2xl border border-zinc-200 bg-white shadow-lg p-3">
+                    <div className="grid grid-cols-8 gap-1">
+                      {EMOJIS.map((e) => (
+                        <button
+                          key={e}
+                          type="button"
+                          className="rounded-xl hover:bg-zinc-100 active:bg-zinc-200 p-2 text-lg leading-none"
+                          onClick={() => insertEmoji(e)}
+                          aria-label={e}
+                        >
+                          {e}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               <input
+                ref={inputRef}
                 className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200"
-                placeholder="Напишите сообщение..."
+                placeholder="Напишите сообщение…"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -362,10 +445,9 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                   }
                 }}
               />
+
               <button
-                className={`rounded-2xl px-4 py-3 font-medium active:scale-[0.99] ${sendDisabled
-                  ? "bg-zinc-300 text-white cursor-not-allowed"
-                  : "bg-zinc-900 text-white"
+                className={`rounded-2xl px-4 py-3 font-medium active:scale-[0.99] ${sendDisabled ? "bg-zinc-300 text-white cursor-not-allowed" : "bg-zinc-900 text-white"
                   }`}
                 onClick={sendMessage}
                 disabled={sendDisabled}
@@ -373,12 +455,14 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                 Отправить
               </button>
             </div>
+
             <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
               <span>{input.trim().length > 0 ? "Enter — отправить" : " "}</span>
               <span className={input.length > MAX_LEN ? "text-red-600" : ""}>
                 {input.length}/{MAX_LEN}
               </span>
             </div>
+
             <div className="mt-2 text-xs text-zinc-500">
               {identity ? (
                 <>Вы — <span className="font-medium text-zinc-700">{identity.nickname}</span>{" "}
