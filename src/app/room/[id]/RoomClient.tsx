@@ -289,16 +289,16 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                   </span>
                 </div>
               </div>
+              <button
+                type="button"
+                className="ml-auto p-2 rounded-md hover:bg-zinc-100"
+                onClick={() => setMenuOpen(v => !v)}
+                aria-label="Меню"
+                data-menu-area="true"
+              >
+                ☰
+              </button>
             </div>
-            <button
-              type="button"
-              className="ml-auto p-2 rounded-md hover:bg-zinc-100"
-              onClick={() => setMenuOpen(v => !v)}
-              aria-label="Меню"
-              data-menu-area="true"
-            >
-              ☰
-            </button>
             {menuOpen && (
               <div
                 className="absolute top-[calc(100%+4px)] right-4 w-[min(280px,90vw)] rounded-xl border bg-white shadow-lg p-4 z-20"
@@ -420,38 +420,10 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                   Вы офлайн. Сообщения не отправляются.
                 </div>
               )}
-              <div className="relative flex gap-2 items-end">
-                <div className="relative" data-emoji-area="true">
-                  <button
-                    type="button"
-                    className="rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-zinc-700 active:scale-[0.99]"
-                    onClick={() => setEmojiOpen((v) => !v)}
-                    aria-label="Эмодзи"
-                  >
-                    🙂
-                  </button>
-
-                  {emojiOpen && (
-                    <div className="absolute bottom-[56px] left-0 z-20 w-[min(360px,90vw)] rounded-2xl border border-zinc-200 bg-white shadow-lg p-3">
-                      <div className="grid grid-cols-8 gap-1">
-                        {EMOJIS.map((e) => (
-                          <button
-                            key={e}
-                            type="button"
-                            className="rounded-xl hover:bg-zinc-100 active:bg-zinc-200 p-2 text-lg leading-none"
-                            onClick={() => insertEmoji(e)}
-                            aria-label={e}
-                          >
-                            {e}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="flex gap-2">
                 <textarea
                   ref={inputRef}
-                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200"
+                  className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200 resize-none"
                   placeholder="Напишите сообщение…"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -463,14 +435,45 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                   }}
                 />
 
-                <button
-                  className={`rounded-2xl px-4 py-3 font-medium active:scale-[0.99] ${sendDisabled ? "bg-zinc-300 text-white cursor-not-allowed" : "bg-zinc-900 text-white"
-                    }`}
-                  onClick={sendMessage}
-                  disabled={sendDisabled}
-                >
-                  {">"}
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    className={`rounded-2xl px-4 py-3 font-medium active:scale-[0.99] ${sendDisabled ? "bg-zinc-300 text-white cursor-not-allowed" : "bg-zinc-900 text-white"
+                      }`}
+                    onClick={sendMessage}
+                    disabled={sendDisabled}
+                  >
+                    {">"}
+                  </button>
+
+                  <div className="relative" data-emoji-area="true">
+                    <button
+                      type="button"
+                      className="rounded-2xl border border-zinc-200 bg-white px-3 py-3 text-zinc-700 active:scale-[0.99] w-full"
+                      onClick={() => setEmojiOpen((v) => !v)}
+                      aria-label="Эмодзи"
+                    >
+                      🙂
+                    </button>
+
+                    {emojiOpen && (
+                      <div className="absolute bottom-[56px] right-0 z-20 w-[min(360px,90vw)] rounded-2xl border border-zinc-200 bg-white shadow-lg p-3">
+                        <div className="grid grid-cols-8 gap-1">
+                          {EMOJIS.map((e) => (
+                            <button
+                              key={e}
+                              type="button"
+                              className="rounded-xl hover:bg-zinc-100 active:bg-zinc-200 p-2 text-lg leading-none"
+                              onClick={() => insertEmoji(e)}
+                              aria-label={e}
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
