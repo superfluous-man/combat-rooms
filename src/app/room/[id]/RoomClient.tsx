@@ -18,7 +18,16 @@ type Message = {
   created_at: string;
 };
 
-
+const PASTEL_BACKGROUNDS = [
+  "bg-pink-50",
+  "bg-indigo-50",
+  "bg-emerald-50",
+  "bg-amber-50",
+  "bg-sky-50",
+  "bg-violet-50",
+  "bg-rose-50",
+  "bg-teal-50"
+];
 const EMOJIS = [
   "😂", "😭", "🥺", "😳", "😌", "😎", "🤡", "💀", "👀", "🔥", "❤️", "✨", "💅", "🫶",
   "😡", "🤝", "🙃", "🫠", "😴", "🤨", "😈", "🧠", "🧵", "🫠", "🫡", "💥", "🌚", "🌝",
@@ -185,7 +194,14 @@ export default function RoomClient({ roomId }: { roomId: string }) {
     setReplyTo(null);
   }
 
-
+  function getBgFromSession(sessionId: string) {
+    let hash = 0;
+    for (let i = 0; i < sessionId.length; i++) {
+      hash = sessionId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % PASTEL_BACKGROUNDS.length;
+    return PASTEL_BACKGROUNDS[index];
+  }
 
   function insertEmoji(e: string) {
     // Close picker after selection (nice on mobile)
@@ -239,7 +255,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
               </div>
               <button
                 type="button"
-                className="ml-auto p-2 rounded-md bg-zinc-900 text-white active:scale-[0.99] hover:bg-zinc-800"
+                className="ml-auto h-12 w-12 flex items-center justify-center rounded-2xl bg-zinc-900 text-white hover:bg-zinc-800 active:scale-[0.97] transition"
                 onClick={() => setMenuOpen(v => !v)}
                 aria-label="Меню"
                 data-menu-area="true"
@@ -299,18 +315,17 @@ export default function RoomClient({ roomId }: { roomId: string }) {
             {messages.map((m) => {
               const reply = m.reply_to_message_id ? messages.find(x => x.id === m.reply_to_message_id) : null;
               const isMine = identity?.sessionId === m.session_id;
-
+              const bgClass = getBgFromSession(m.session_id);
               return (
                 <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                  <div key={m.id} className={`max-w-[80%] rounded-2xl p-3 shadow-sm
-                    ${isMine
-                      ? "bg-indigo-50 border border-indigo-200"
-                      : "bg-white border border-zinc-200"
-                    }`}>
+                  <div
+                    className={`max-w-[80%] rounded-2xl p-3 border
+                      ${isMine
+                        ? "bg-indigo-100 border-indigo-200"
+                        : `${bgClass} border-zinc-200`
+                      }`}
+                  >
                     <div className="flex items-center gap-2">
-                      <div className="text-xs font-medium px-2 py-0.5 rounded border border-zinc-300" style={{ color: m.color }}>
-                        {m.nickname}
-                      </div>
                       <span className="ml-auto text-xs text-zinc-400" suppressHydrationWarning>
                         {new Date(m.created_at).toLocaleTimeString()}
                       </span>
