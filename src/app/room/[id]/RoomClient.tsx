@@ -325,15 +325,9 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                         : `${bgClass} border-zinc-200`
                       }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="ml-auto text-xs text-zinc-400" suppressHydrationWarning>
-                        {new Date(m.created_at).toLocaleTimeString()}
-                      </span>
-                    </div>
-
                     {reply && (
                       <div className="mt-2 rounded-xl bg-zinc-50 border border-zinc-200 p-2 text-sm">
-                        <div className="text-xs text-zinc-500">Ответ на {reply.nickname}</div>
+                        <div className="text-xs text-zinc-500">Ответ</div>
                         <div className="line-clamp-2 text-zinc-700">{reply.content}</div>
                       </div>
                     )}
@@ -349,6 +343,9 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                       >
                         Ответить
                       </button>
+                      <span className="ml-auto text-xs text-zinc-400" suppressHydrationWarning>
+                        {new Date(m.created_at).toLocaleTimeString()}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -362,7 +359,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
               {replyPreview && (
                 <div className="mb-2 rounded-2xl bg-zinc-50 border border-zinc-200 p-2 text-sm flex items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-zinc-500">Ответ на {replyPreview.nickname}</div>
+                    <div className="text-xs text-zinc-500">Ответ</div>
                     <div className="line-clamp-2 text-zinc-700">{replyPreview.content}</div>
                   </div>
                   <button className="text-xs text-zinc-500 px-2" onClick={() => setReplyTo(null)}>✕</button>
@@ -444,9 +441,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
 
               <div className="mt-2 text-xs text-zinc-500">
                 {identity ? (
-                  <>Вы — <span className="font-medium text-zinc-700">{identity.nickname}</span>{" "}
-                    (обновите страницу — будет новое имя)
-                  </>
+                  <>Анонимный режим</>
                 ) : (
                   "Загрузка…"
                 )}
