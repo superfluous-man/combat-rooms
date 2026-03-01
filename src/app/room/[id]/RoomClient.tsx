@@ -58,7 +58,6 @@ export default function RoomClient({ roomId }: { roomId: string }) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const isMine = identity?.sessionId === m.session_id;
 
   useEffect(() => {
     const load = async () => {
@@ -353,6 +352,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
             {messages.map((m) => {
               const reply = m.reply_to_message_id ? messages.find(x => x.id === m.reply_to_message_id) : null;
               const counts = reactionCounts[m.id] ?? {};
+              const isMine = identity?.sessionId === m.session_id;
 
               return (
                 <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
