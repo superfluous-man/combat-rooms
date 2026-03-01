@@ -18,12 +18,7 @@ type Message = {
   created_at: string;
 };
 
-type ReactionRow = {
-  message_id: string;
-  emoji: string;
-};
 
-const REACTIONS = ["🔥", "😭", "👀", "💀", "❤️"];
 const EMOJIS = [
   "😂", "😭", "🥺", "😳", "😌", "😎", "🤡", "💀", "👀", "🔥", "❤️", "✨", "💅", "🫶",
   "😡", "🤝", "🙃", "🫠", "😴", "🤨", "😈", "🧠", "🧵", "🫠", "🫡", "💥", "🌚", "🌝",
@@ -53,7 +48,6 @@ export default function RoomClient({ roomId }: { roomId: string }) {
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const [reactionCounts, setReactionCounts] = useState<Record<string, Record<string, number>>>({});
   const lastSentAtRef = useRef<number>(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -77,18 +71,6 @@ export default function RoomClient({ roomId }: { roomId: string }) {
         .limit(200);
 
       setMessages((msgData as Message[]) ?? []);
-
-      const { data: reactData } = await supabase
-        .from("reactions")
-        .select("message_id,emoji")
-        .in("message_id", ((msgData as Message[]) ?? []).map(m => m.id));
-
-      const counts: Record<string, Record<string, number>> = {};
-      (reactData as ReactionRow[] | null)?.forEach(r => {
-        counts[r.message_id] ??= {};
-        counts[r.message_id][r.emoji] = (counts[r.message_id][r.emoji] ?? 0) + 1;
-      });
-      setReactionCounts(counts);
     };
 
     load();
@@ -103,19 +85,6 @@ export default function RoomClient({ roomId }: { roomId: string }) {
         (payload) => {
           const m = payload.new as Message;
           setMessages(prev => [...prev, m]);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "reactions" },
-        (payload) => {
-          const r = payload.new as { message_id: string; emoji: string };
-          setReactionCounts(prev => {
-            const next = { ...prev };
-            next[r.message_id] = { ...(next[r.message_id] ?? {}) };
-            next[r.message_id][r.emoji] = (next[r.message_id][r.emoji] ?? 0) + 1;
-            return next;
-          });
         }
       )
       .subscribe();
@@ -216,29 +185,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
     setReplyTo(null);
   }
 
-  async function react(messageId: string, emoji: string) {
-    if (!identity) return;
 
-    if (!isOnline) {
-      showError("Нет подключения к интернету.");
-      return;
-    }
-    // unique constraint prevents spam by same session for same emoji
-    const { error } = await supabase.from("reactions").insert({
-      message_id: messageId,
-      emoji,
-      session_id: identity.sessionId,
-    });
-
-    if (error) {
-      // ignore duplicate reaction silently (unique constraint)
-      const msg = String((error as any).message ?? "");
-      if (msg.toLowerCase().includes("duplicate") || msg.toLowerCase().includes("unique")) return;
-
-      console.error("INSERT reactions failed:", error);
-      showError("Не удалось поставить реакцию.");
-    }
-  }
 
   function insertEmoji(e: string) {
     // Close picker after selection (nice on mobile)
@@ -292,7 +239,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
               </div>
               <button
                 type="button"
-                className="ml-auto p-2 rounded-md bg-zinc-900 text-white hover:bg-zinc-800"
+                className="ml-auto p-2 rounded-md bg-zinc-900 text-white active:scale-[0.99] hover:bg-zinc-800"
                 onClick={() => setMenuOpen(v => !v)}
                 aria-label="Меню"
                 data-menu-area="true"
@@ -351,7 +298,6 @@ export default function RoomClient({ roomId }: { roomId: string }) {
             )}
             {messages.map((m) => {
               const reply = m.reply_to_message_id ? messages.find(x => x.id === m.reply_to_message_id) : null;
-              const counts = reactionCounts[m.id] ?? {};
               const isMine = identity?.sessionId === m.session_id;
 
               return (
@@ -388,17 +334,6 @@ export default function RoomClient({ roomId }: { roomId: string }) {
                       >
                         Ответить
                       </button>
-
-                      {REACTIONS.map((e) => (
-                        <button
-                          key={e}
-                          className="text-xs rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-zinc-700 active:scale-[0.99]"
-                          onClick={() => react(m.id, e)}
-                        >
-                          {e}
-                          {counts[e] ? <span className="ml-1 text-zinc-500">{counts[e]}</span> : null}
-                        </button>
-                      ))}
                     </div>
                   </div>
                 </div>
