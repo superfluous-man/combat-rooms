@@ -58,6 +58,8 @@ export default function RoomClient({ roomId }: { roomId: string }) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const isMine = identity?.sessionId === m.session_id;
+
   useEffect(() => {
     const load = async () => {
       const { data: roomData } = await supabase
@@ -291,7 +293,7 @@ export default function RoomClient({ roomId }: { roomId: string }) {
               </div>
               <button
                 type="button"
-                className="ml-auto p-2 rounded-md hover:bg-zinc-100"
+                className="ml-auto p-2 rounded-md bg-zinc-900 text-white hover:bg-zinc-800"
                 onClick={() => setMenuOpen(v => !v)}
                 aria-label="Меню"
                 data-menu-area="true"
@@ -353,44 +355,51 @@ export default function RoomClient({ roomId }: { roomId: string }) {
               const counts = reactionCounts[m.id] ?? {};
 
               return (
-                <div key={m.id} className="rounded-2xl bg-white border border-zinc-200 p-3 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: m.color }} />
-                    <span className="font-medium text-zinc-900">{m.nickname}</span>
-                    <span className="ml-auto text-xs text-zinc-400" suppressHydrationWarning>
-                      {new Date(m.created_at).toLocaleTimeString()}
-                    </span>
-                  </div>
-
-                  {reply && (
-                    <div className="mt-2 rounded-xl bg-zinc-50 border border-zinc-200 p-2 text-sm">
-                      <div className="text-xs text-zinc-500">Ответ на {reply.nickname}</div>
-                      <div className="line-clamp-2 text-zinc-700">{reply.content}</div>
+                <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                  <div key={m.id} className={`max-w-[80%] rounded-2xl p-3 shadow-sm
+                    ${isMine
+                      ? "bg-indigo-50 border border-indigo-200"
+                      : "bg-white border border-zinc-200"
+                    }`}>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs font-medium px-2 py-0.5 rounded border border-zinc-300" style={{ color: m.color }}>
+                        {m.nickname}
+                      </div>
+                      <span className="ml-auto text-xs text-zinc-400" suppressHydrationWarning>
+                        {new Date(m.created_at).toLocaleTimeString()}
+                      </span>
                     </div>
-                  )}
 
-                  <div className="mt-2 whitespace-pre-wrap text-zinc-900 leading-relaxed">
-                    {linkifyText(m.content)}
-                  </div>
+                    {reply && (
+                      <div className="mt-2 rounded-xl bg-zinc-50 border border-zinc-200 p-2 text-sm">
+                        <div className="text-xs text-zinc-500">Ответ на {reply.nickname}</div>
+                        <div className="line-clamp-2 text-zinc-700">{reply.content}</div>
+                      </div>
+                    )}
 
-                  <div className="mt-3 flex items-center gap-2 flex-wrap">
-                    <button
-                      className="text-xs rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-zinc-700 active:scale-[0.99]"
-                      onClick={() => setReplyTo(m)}
-                    >
-                      Ответить
-                    </button>
+                    <div className="mt-2 whitespace-pre-wrap text-zinc-900 leading-relaxed">
+                      {linkifyText(m.content)}
+                    </div>
 
-                    {REACTIONS.map((e) => (
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
                       <button
-                        key={e}
                         className="text-xs rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-zinc-700 active:scale-[0.99]"
-                        onClick={() => react(m.id, e)}
+                        onClick={() => setReplyTo(m)}
                       >
-                        {e}
-                        {counts[e] ? <span className="ml-1 text-zinc-500">{counts[e]}</span> : null}
+                        Ответить
                       </button>
-                    ))}
+
+                      {REACTIONS.map((e) => (
+                        <button
+                          key={e}
+                          className="text-xs rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-zinc-700 active:scale-[0.99]"
+                          onClick={() => react(m.id, e)}
+                        >
+                          {e}
+                          {counts[e] ? <span className="ml-1 text-zinc-500">{counts[e]}</span> : null}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
